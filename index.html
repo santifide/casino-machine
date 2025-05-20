@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Máquina Tragamonedas</title>
+  <style>
+    body {
+      background: #7be5ff;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+
+    .slots {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .slot-container {
+      width: 28vw;
+      height: 28vw;
+      overflow: hidden;
+      border: 4px solid white;
+      background: rgb(92, 92, 92);
+      position: relative;
+    }
+
+    .reel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+
+    .reel img {
+      width: 100%;
+      display: block;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 18px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    #resultado {
+      font-size: 24px;
+      font-weight: bold;
+      min-height: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="slots">
+    <div class="slot-container"><div class="reel" id="reel1"></div></div>
+    <div class="slot-container"><div class="reel" id="reel2"></div></div>
+    <div class="slot-container"><div class="reel" id="reel3"></div></div>
+  </div>
+
+  <button onclick="startSlots()">🎰 TIRAR</button>
+  <div id="resultado"></div>
+
+  <!-- Sonidos -->
+  <audio id="sound-win" src="./sonido-2.mp3"></audio>
+  <audio id="sound-spin" src="./sonido-1.mp3"></audio>
+
+  <script>
+    const images = [
+      "./img/anana.svg",
+      "./img/banana.svg",
+      "./img/cereza.svg",
+      "./img/frutilla.svg",
+      "./img/limon.svg",
+      "./img/mora.svg",
+      "./img/sandia.svg"
+    ];
+
+    const reels = [
+      document.getElementById("reel1"),
+      document.getElementById("reel2"),
+      document.getElementById("reel3")
+    ];
+
+    const resultado = document.getElementById("resultado");
+    const spinSound = document.getElementById("sound-spin");
+    const winSound = document.getElementById("sound-win");
+
+    function createReelContent(reel) {
+      reel.innerHTML = "";
+      for (let i = 0; i < images.length * 4; i++) {
+        const img = document.createElement("img");
+        img.src = images[Math.floor(Math.random() * images.length)];
+        reel.appendChild(img);
+      }
+    }
+
+    function animateReel(reel) {
+      return new Promise((resolve) => {
+        createReelContent(reel);
+        let pos = 0;
+        let speed = 25;
+        let deceleration = 0.95;
+
+        function spin() {
+          pos -= speed;
+          reel.style.transform = `translateY(${pos}px)`;
+
+          if (speed > 1) {
+            speed *= deceleration;
+            requestAnimationFrame(spin);
+          } else {
+            const imgs = reel.querySelectorAll("img");
+            const index = Math.floor(Math.abs(pos + 50) / 100) % imgs.length;
+            const final = imgs[index].src;
+            reel.innerHTML = "";
+            const img = document.createElement("img");
+            img.src = final;
+            reel.appendChild(img);
+            reel.style.transform = "translateY(0)";
+            resolve(final);
+          }
+        }
+
+        spin();
+      });
+    }
+
+    async function startSlots() {
+      resultado.textContent = "Girando...";
+      spinSound.currentTime = 0;
+      spinSound.play();
+
+      const result1 = await animateReel(reels[0]);
+      const result2 = await animateReel(reels[1]);
+      const result3 = await animateReel(reels[2]);
+
+      if (result1 === result2 && result2 === result3) {
+        resultado.textContent = "🎉 ¡GANASTE! 🎉";
+        winSound.currentTime = 0;
+        winSound.play();
+      } else {
+        resultado.textContent = "😢 Seguí participando...";
+      }
+    }
+  </script>
+
+</body>
+</html>
